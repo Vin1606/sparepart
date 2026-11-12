@@ -185,12 +185,9 @@
                     <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2.5 flex-grow-1">
                         <div class="search-gys-wrapper">
                             <i class="fa-solid fa-magnifying-glass search-gys-icon"></i>
-                            <input type="text" id="rackSearchInput" class="search-gys-input"
+                            <input type="search" id="rackSearchInput" class="search-gys-input"
                                 placeholder="Cari nama rak, kode #RAK, atau lokasi area..."
                                 aria-label="Cari Titik Rak">
-                            <button type="button" id="clearRackSearchBtn" class="search-clear-btn" title="Bersihkan pencarian">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
                         </div>
 
                         <select id="lokasiFilterSelect" class="form-select filter-select-gys" style="max-width: 230px;"
@@ -314,18 +311,17 @@
                                                 <i class="fa-solid fa-pen-to-square"></i>
                                                 <span>Edit</span>
                                             </a>
-                                            <form action="{{ route('rack.destroy', $rack->id_rack) }}" method="POST"
-                                                onsubmit="return confirm('Apakah Anda yakin ingin menghapus rak \'{{ addslashes($rack->nama_rack) }}\'?');"
-                                                class="d-inline m-0">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button class="btn-action-delete border-0" type="submit"
-                                                    title="{{ $isFilled ? 'Tidak dapat dihapus: masih ada ' . $rack->barangs_count . ' barang di rak ini' : 'Hapus Titik Rak' }}"
-                                                    @if ($isFilled) disabled style="opacity: 0.5; cursor: not-allowed;" @endif>
-                                                    <i class="fa-solid fa-trash-can"></i>
-                                                    <span>Hapus</span>
-                                                </button>
-                                            </form>
+                                            <button type="button" class="btn-action-delete border-0"
+                                                @if (!$isFilled)
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalHapusRak-{{ $rack->id_rack }}"
+                                                @else
+                                                    disabled style="opacity: 0.5; cursor: not-allowed;"
+                                                @endif
+                                                title="{{ $isFilled ? 'Tidak dapat dihapus: masih ada ' . $rack->barangs_count . ' barang di rak ini' : 'Hapus Titik Rak' }}">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                                <span>Hapus</span>
+                                            </button>
                                         </div>
                                     </td>
                                 @endif
@@ -361,13 +357,9 @@
                                             <i class="fa-solid fa-magnifying-glass"></i>
                                         </div>
                                         <h6 class="fw-bold text-dark mb-1">Titik Rak Tidak Ditemukan</h6>
-                                        <p class="text-secondary small mb-3">
+                                        <p class="text-secondary small mb-0">
                                             Tidak ada rak yang cocok dengan kata kunci pencarian atau filter zona yang dipilih.
                                         </p>
-                                        <button type="button" id="resetRackFilterBtn"
-                                            class="btn btn-outline-secondary btn-sm px-3 py-1.5 fw-semibold">
-                                            <i class="fa-solid fa-rotate-left me-1"></i> Reset Filter &amp; Pencarian
-                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -396,95 +388,118 @@
             </div>
         </div>
     </div>
+
+    {{-- =========================================================================
+         MODAL KONFIRMASI HAPUS RAK (POSISI DI TENGAH LAYAR)
+         Menggunakan class "modal-dialog-centered" bawaan Bootstrap 5 sehingga
+         tidak membutuhkan kode JavaScript tambahan untuk membuka/menutup popup.
+         ========================================================================= --}}
+    @if (auth()->user()->isAdmin())
+        @foreach ($racks->where('barangs_count', '<=', 0) as $rack)
+            <div class="modal fade" id="modalHapusRak-{{ $rack->id_rack }}" tabindex="-1"
+                aria-labelledby="labelHapusRak-{{ $rack->id_rack }}" aria-hidden="true">
+                {{-- modal-dialog-centered membuat kotak konfirmasi tampil tepat di tengah layar --}}
+                <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+                    <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                        <div class="modal-body p-4 text-center">
+
+                            {{-- Ikon Peringatan Hapus (Merah) --}}
+                            <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
+                                style="width: 60px; height: 60px; background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca;">
+                                <i class="fa-solid fa-trash-can fs-4"></i>
+                            </div>
+
+                            {{-- Judul & Pertanyaan Konfirmasi --}}
+                            <h5 class="fw-bold text-dark mb-1" id="labelHapusRak-{{ $rack->id_rack }}">
+                                Konfirmasi Hapus Titik Rak
+                            </h5>
+                            <p class="text-secondary small mb-3">
+                                Apakah Anda yakin ingin menghapus titik rak kosong ini dari sistem?
+                            </p>
+
+                            {{-- Ringkasan Detail Rak yang Akan Dihapus --}}
+                            <div class="p-3 rounded-3 bg-light border text-start mb-3">
+                                <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                                    <span class="fw-bold text-dark" style="font-size: 13.5px;">{{ $rack->nama_rack }}</span>
+                                    <span class="part-code-badge">#RAK-{{ str_pad($rack->id_rack, 4, '0', STR_PAD_LEFT) }}</span>
+                                </div>
+                                <div class="text-muted small">
+                                    <i class="fa-solid fa-location-dot me-1 text-danger"></i>
+                                    Area: {{ $rack->lokasi ?: '-' }}
+                                </div>
+                            </div>
+
+                            {{-- Form Control Hapus Rak (Method DELETE) dengan Pilihan "Tidak" atau "Ya, Hapus" --}}
+                            <form action="{{ route('rack.destroy', $rack->id_rack) }}" method="POST"
+                                class="d-flex justify-content-center gap-2 mt-3">
+                                @csrf
+                                @method('DELETE')
+
+                                {{-- Tombol Batal / Tidak (Menutup modal otomatis) --}}
+                                <button type="button"
+                                    class="btn btn-outline-secondary px-4 py-2 fw-semibold flex-fill"
+                                    data-bs-dismiss="modal" style="font-size: 13px;">
+                                    <i class="fa-solid fa-xmark me-1"></i> Tidak
+                                </button>
+
+                                {{-- Tombol Konfirmasi Ya, Hapus (Mengirim request DELETE ke RackController@destroy) --}}
+                                <button type="submit"
+                                    class="btn btn-danger px-4 py-2 fw-bold shadow-sm flex-fill"
+                                    style="font-size: 13px; border-radius: 10px;">
+                                    <i class="fa-solid fa-trash-can me-1"></i> Ya, Hapus
+                                </button>
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    @endif
 @endsection
 
+{{-- =============================================================================
+     SCRIPT FILTER & PENCARIAN INSTAN TABEL RAK (RINGKAS & TANPA RELOAD HALAMAN)
+     ============================================================================= --}}
 @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput  = document.getElementById('rackSearchInput');
-            const clearBtn     = document.getElementById('clearRackSearchBtn');
-            const lokasiSelect = document.getElementById('lokasiFilterSelect');
-            const filterBtns   = document.querySelectorAll('.filter-pill-btn');
-            const tableRows    = document.querySelectorAll('#rackTable tbody tr.rack-row');
-            const noMatchRow   = document.getElementById('noRackMatchRow');
-            const resetBtn     = document.getElementById('resetRackFilterBtn');
-            const counterBadge = document.getElementById('rackRowCount');
+        document.addEventListener('DOMContentLoaded', () => {
+            // Mengambil elemen pencarian, dropdown lokasi, tombol tab status, dan baris tabel rak
+            const search = document.getElementById('rackSearchInput');
+            const lokasi = document.getElementById('lokasiFilterSelect');
+            const pills  = document.querySelectorAll('.filter-pill-btn');
+            const rows   = document.querySelectorAll('#rackTable tbody tr.rack-row');
+            const empty  = document.getElementById('noRackMatchRow');
+            const count  = document.getElementById('rackRowCount');
+            let status   = 'all'; // Menyimpan status filter rak ('all', 'filled', 'empty')
 
-            let activeStatus = 'all';
+            // Fungsi utama untuk menyaring baris rak berdasarkan kata kunci, status isi, dan zona lokasi
+            const filterRack = () => {
+                const q = (search?.value || '').toLowerCase().trim();
+                const l = lokasi?.value || 'all';
+                let visible = 0;
 
-            function applyRackFilters() {
-                const query    = searchInput ? searchInput.value.toLowerCase().trim() : '';
-                const lokasi   = lokasiSelect ? lokasiSelect.value : 'all';
-                let visibleIdx = 0;
-
-                if (clearBtn) {
-                    clearBtn.style.display = query.length > 0 ? 'inline-flex' : 'none';
-                }
-
-                tableRows.forEach(function(row) {
-                    const rowText   = row.innerText.toLowerCase();
-                    const rowStatus = row.getAttribute('data-status');
-                    const rowLokasi = row.getAttribute('data-lokasi');
-
-                    const matchQuery  = !query || rowText.includes(query);
-                    const matchStatus = activeStatus === 'all' || rowStatus === activeStatus;
-                    const matchLokasi = lokasi === 'all' || rowLokasi === lokasi;
-
-                    if (matchQuery && matchStatus && matchLokasi) {
-                        row.style.display = '';
-                        visibleIdx++;
-                        const numCell = row.querySelector('.row-number');
-                        if (numCell) numCell.textContent = visibleIdx;
-                    } else {
-                        row.style.display = 'none';
-                    }
+                rows.forEach(row => {
+                    const show = (!q || row.innerText.toLowerCase().includes(q))
+                        && (status === 'all' || row.dataset.status === status)
+                        && (l === 'all' || row.dataset.lokasi === l);
+                    row.style.display = show ? '' : 'none';
+                    if (show) row.querySelector('.row-number').textContent = ++visible;
                 });
 
-                if (counterBadge) {
-                    counterBadge.textContent = visibleIdx + ' Rak';
-                }
+                if (count) count.textContent = `${visible} Rak`;
+                if (empty) empty.style.display = (rows.length && !visible) ? '' : 'none';
+            };
 
-                if (noMatchRow) {
-                    noMatchRow.style.display = (tableRows.length > 0 && visibleIdx === 0) ? '' : 'none';
-                }
-            }
-
-            if (searchInput) {
-                searchInput.addEventListener('input', applyRackFilters);
-            }
-
-            if (clearBtn && searchInput) {
-                clearBtn.addEventListener('click', function() {
-                    searchInput.value = '';
-                    searchInput.focus();
-                    applyRackFilters();
-                });
-            }
-
-            if (lokasiSelect) {
-                lokasiSelect.addEventListener('change', applyRackFilters);
-            }
-
-            filterBtns.forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    filterBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    activeStatus = this.getAttribute('data-filter') || 'all';
-                    applyRackFilters();
-                });
-            });
-
-            if (resetBtn) {
-                resetBtn.addEventListener('click', function() {
-                    if (searchInput) searchInput.value = '';
-                    if (lokasiSelect) lokasiSelect.value = 'all';
-                    activeStatus = 'all';
-                    filterBtns.forEach(b => {
-                        b.classList.toggle('active', b.getAttribute('data-filter') === 'all');
-                    });
-                    applyRackFilters();
-                });
-            }
+            // Event listener saat input pencarian diketik, lokasi dipilih, atau tab status diklik
+            search?.addEventListener('input', filterRack);
+            lokasi?.addEventListener('change', filterRack);
+            pills.forEach(btn => btn.addEventListener('click', () => {
+                pills.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                status = btn.dataset.filter;
+                filterRack();
+            }));
         });
     </script>
 @endpush

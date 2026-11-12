@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('nama_mekanik');
             $table->integer('jumlah');
             $table->text('keperluan')->nullable();
-            $table->dateTime('tanggal_ambil')->useCurrent();
+            $table->timestamp('tanggal_ambil');
             $table->timestamps();
         });
     }

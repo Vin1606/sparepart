@@ -17,6 +17,7 @@ class Barang extends Model
         'nama_barang',
         'deskripsi',
         'id_rack',
+        'kategori',
         'stock',
     ];
 

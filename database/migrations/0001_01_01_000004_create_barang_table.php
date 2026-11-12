@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('nama_barang');
             $table->unsignedBigInteger('id_rack');
             $table->foreign('id_rack')->references('id_rack')->on('rack')->onDelete('cascade');
+            $table->enum('kategori', ['PCS', 'KG', 'LT', 'MTR', 'UNT']);
             $table->integer('stock');
             $table->timestamps();
         });

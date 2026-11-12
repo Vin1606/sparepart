@@ -41,6 +41,7 @@ class BarangController extends Controller
             'nama_barang' => 'required|string|max:255',
             'deskripsi'   => 'nullable|string',
             'id_rack'     => 'required|exists:rack,id_rack',
+            'kategori'     => 'required|in:PCS,KG,LT,MTR,UNT',
             'stock'       => 'required|integer|min:0',
         ]);
 
@@ -70,6 +71,7 @@ class BarangController extends Controller
             'nama_barang' => 'required|string|max:255',
             'deskripsi'   => 'nullable|string',
             'id_rack'     => 'required|exists:rack,id_rack',
+            'kategori'     => 'required|in:PCS,KG,LT,MTR,UNT',
             'stock'       => 'required|integer|min:0',
         ]);
 

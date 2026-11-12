@@ -26,16 +26,6 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Standard User Account
-        User::updateOrCreate(
-            ['email' => 'user@gmail.com'],
-            [
-                'name' => 'Staff Gudang Mekanik',
-                'password' => Hash::make('user123'),
-                'role' => 'user',
-            ]
-        );
-
         // Akun Mekanik Regu 1
         User::updateOrCreate(
             ['email' => 'regu1@gmail.com'],

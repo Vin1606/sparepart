@@ -431,93 +431,48 @@
     </div>
 @endsection
 
+{{-- =============================================================================
+     SCRIPT FILTER & PENCARIAN INSTAN TABEL LOG RIWAYAT (RINGKAS & TANPA RELOAD)
+     ============================================================================= --}}
 @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput  = document.getElementById('logSearchInput');
-            const clearBtn     = document.getElementById('clearLogSearchBtn');
-            const partSelect   = document.getElementById('partFilterSelect');
-            const filterBtns   = document.querySelectorAll('.filter-pill-btn');
-            const tableRows    = document.querySelectorAll('#logTable tbody tr.log-row');
-            const noMatchRow   = document.getElementById('noLogMatchRow');
-            const resetBtn     = document.getElementById('resetLogFilterBtn');
-            const counterBadge = document.getElementById('logRowCount');
+        document.addEventListener('DOMContentLoaded', () => {
+            // Mengambil elemen input pencarian, dropdown barang, tombol tab shift, dan baris tabel log
+            const search = document.getElementById('logSearchInput');
+            const part   = document.getElementById('partFilterSelect');
+            const pills  = document.querySelectorAll('.filter-pill-btn');
+            const rows   = document.querySelectorAll('#logTable tbody tr.log-row');
+            const empty  = document.getElementById('noLogMatchRow');
+            const count  = document.getElementById('logRowCount');
+            let shift    = 'all'; // Menyimpan filter shift aktif ('all', 'shift-1', 'shift-2', 'shift-3', 'non-shift')
 
-            let activeShift = 'all';
+            // Fungsi utama untuk menyaring baris riwayat berdasarkan teks, shift kerja, dan suku cadang
+            const filterLog = () => {
+                const q = (search?.value || '').toLowerCase().trim();
+                const p = part?.value || 'all';
+                let visible = 0;
 
-            function applyLogFilters() {
-                const query    = searchInput ? searchInput.value.toLowerCase().trim() : '';
-                const partVal  = partSelect ? partSelect.value : 'all';
-                let visibleIdx = 0;
-
-                if (clearBtn) {
-                    clearBtn.style.display = query.length > 0 ? 'inline-flex' : 'none';
-                }
-
-                tableRows.forEach(function(row) {
-                    const rowText  = row.innerText.toLowerCase();
-                    const rowShift = row.getAttribute('data-shift');
-                    const rowPart  = row.getAttribute('data-part');
-
-                    const matchQuery = !query || rowText.includes(query);
-                    const matchShift = activeShift === 'all' || rowShift === activeShift;
-                    const matchPart  = partVal === 'all' || rowPart === partVal;
-
-                    if (matchQuery && matchShift && matchPart) {
-                        row.style.display = '';
-                        visibleIdx++;
-                        const numCell = row.querySelector('.row-number');
-                        if (numCell) numCell.textContent = visibleIdx;
-                    } else {
-                        row.style.display = 'none';
-                    }
+                rows.forEach(row => {
+                    const show = (!q || row.innerText.toLowerCase().includes(q))
+                        && (shift === 'all' || row.dataset.shift === shift)
+                        && (p === 'all' || row.dataset.part === p);
+                    row.style.display = show ? '' : 'none';
+                    if (show) row.querySelector('.row-number').textContent = ++visible;
                 });
 
-                if (counterBadge) {
-                    counterBadge.textContent = visibleIdx + ' Data';
-                }
+                if (count) count.textContent = `${visible} Data`;
+                if (empty) empty.style.display = (rows.length && !visible) ? '' : 'none';
+            };
 
-                if (noMatchRow) {
-                    noMatchRow.style.display = (tableRows.length > 0 && visibleIdx === 0) ? '' : 'none';
-                }
-            }
-
-            if (searchInput) {
-                searchInput.addEventListener('input', applyLogFilters);
-            }
-
-            if (clearBtn && searchInput) {
-                clearBtn.addEventListener('click', function() {
-                    searchInput.value = '';
-                    searchInput.focus();
-                    applyLogFilters();
-                });
-            }
-
-            if (partSelect) {
-                partSelect.addEventListener('change', applyLogFilters);
-            }
-
-            filterBtns.forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    filterBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    activeShift = this.getAttribute('data-filter') || 'all';
-                    applyLogFilters();
-                });
-            });
-
-            if (resetBtn) {
-                resetBtn.addEventListener('click', function() {
-                    if (searchInput) searchInput.value = '';
-                    if (partSelect) partSelect.value = 'all';
-                    activeShift = 'all';
-                    filterBtns.forEach(b => {
-                        b.classList.toggle('active', b.getAttribute('data-filter') === 'all');
-                    });
-                    applyLogFilters();
-                });
-            }
+            // Event listener saat input pencarian diketik, barang dipilih, atau tab shift diklik
+            search?.addEventListener('input', filterLog);
+            part?.addEventListener('change', filterLog);
+            pills.forEach(btn => btn.addEventListener('click', () => {
+                pills.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                shift = btn.dataset.filter;
+                filterLog();
+            }));
         });
     </script>
 @endpush

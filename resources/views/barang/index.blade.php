@@ -4,19 +4,26 @@
 @section('title', 'Data Stok Spare Part - Mechanic Engineer Inventory | PT Garuda Yamato Steel')
 
 @section('content')
+    {{-- =========================================================================
+         1. PERHITUNGAN DATA RINGKASAN (KPI) & DAFTAR FILTER RAK
+         ========================================================================= --}}
     @php
-        $totalJenis  = $barangs->count();
-        $totalStok   = $barangs->sum('stock');
-        $stokAman    = $barangs->where('stock', '>', 10)->count();
-        $stokMenipis = $barangs->whereBetween('stock', [1, 10])->count();
-        $stokHabis   = $barangs->where('stock', '<=', 0)->count();
-        $perluRestok = $barangs->where('stock', '<=', 10)->count();
-        $totalRak    = $barangs->pluck('id_rack')->unique()->filter()->count();
-        $rackOptions = $barangs->pluck('rack')->filter()->unique('id_rack')->sortBy('nama_rack');
+        $totalJenis  = $barangs->count();                                                  // Total jenis suku cadang terdaftar
+        $totalStok   = $barangs->sum('stock');                                             // Akumulasi seluruh unit stok fisik
+        $stokAman    = $barangs->where('stock', '>', 10)->count();                         // Jumlah barang dengan stok aman (> 10)
+        $stokMenipis = $barangs->whereBetween('stock', [1, 10])->count();                  // Jumlah barang dengan stok menipis (1 - 10)
+        $stokHabis   = $barangs->where('stock', '<=', 0)->count();                         // Jumlah barang yang stoknya habis (0)
+        $perluRestok = $barangs->where('stock', '<=', 10)->count();                        // Total barang yang perlu restock (<= 10)
+        $totalRak    = $barangs->pluck('id_rack')->unique()->filter()->count();            // Jumlah titik rak aktif yang terpakai
+        $rackOptions = $barangs->pluck('rack')->filter()->unique('id_rack')->sortBy('nama_rack'); // Daftar rak untuk dropdown filter
     @endphp
 
+    {{-- Container Utama Halaman Katalog --}}
     <div class="catalog-shell">
-        {{-- Breadcrumb --}}
+
+        {{-- =====================================================================
+             2. BREADCRUMB (Navigasi Jejak Halaman)
+             ===================================================================== --}}
         <ul class="breadcrumb-custom">
             <li class="d-inline-flex align-items-center gap-1.5">
                 <i class="fa-solid fa-house"></i>
@@ -26,8 +33,11 @@
             <li class="active">Katalog Spare Part</li>
         </ul>
 
-        {{-- Page Header --}}
+        {{-- =====================================================================
+             3. HEADER HALAMAN & TOMBOL AKSI CEPAT (Sesuai Role Login)
+             ===================================================================== --}}
         <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+            {{-- Judul & Deskripsi Halaman --}}
             <div>
                 <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                     <h1 class="page-title mb-0">Katalog &amp; Stok Spare Part Mekanik</h1>
@@ -41,6 +51,7 @@
                 </p>
             </div>
 
+            {{-- Tombol Navigasi Aksi: Admin bisa Tambah Barang & Kelola Rak, Staff hanya Lihat Rak & Riwayat --}}
             <div class="d-flex align-items-center gap-2 flex-wrap">
                 @if (auth()->user()->isAdmin())
                     <a href="{{ route('barang.create') }}"
@@ -78,7 +89,9 @@
             </div>
         </div>
 
-        {{-- Flash Alert --}}
+        {{-- =====================================================================
+             4. NOTIFIKASI FLASH MESSAGE (Pesan Sukses / Gagal dari Controller)
+             ===================================================================== --}}
         @if (session('success'))
             <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm d-flex align-items-center gap-2.5 mb-4 py-3 px-3.5 rounded-3"
                 role="alert">
@@ -97,7 +110,9 @@
             </div>
         @endif
 
-        {{-- KPI Summary Cards --}}
+        {{-- =====================================================================
+             5. KARTU RINGKASAN STATISTIK (4 KPI SUMMARY CARDS)
+             ===================================================================== --}}
         <div class="row g-3 mb-4">
             {{-- KPI 1: Total Jenis Barang --}}
             <div class="col-sm-6 col-xl-3">
@@ -176,21 +191,21 @@
             </div>
         </div>
 
-        {{-- Tabel Data Barang --}}
+        {{-- =====================================================================
+             6. KARTU UTAMA TABEL DATA BARANG (Pencarian, Filter, Tabel & Footer)
+             ===================================================================== --}}
         <div class="card main-data-card">
-            {{-- Toolbar: Pencarian & Filter --}}
+
+            {{-- 6A. Toolbar Atas: Input Pencarian, Dropdown Filter Rak & Tab Filter Status Stok --}}
             <div class="card-header">
                 <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3">
-                    {{-- Kiri: Search Input + Filter Rak --}}
+                    {{-- Bagian Kiri: Kotak Pencarian Teks & Dropdown Pilih Rak --}}
                     <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2.5 flex-grow-1">
                         <div class="search-gys-wrapper">
                             <i class="fa-solid fa-magnifying-glass search-gys-icon"></i>
-                            <input type="text" id="tableSearchInput" class="search-gys-input"
+                            <input type="search" id="tableSearchInput" class="search-gys-input"
                                 placeholder="Cari nama part, kode #BRG, rak, atau spesifikasi..."
                                 aria-label="Cari Suku Cadang">
-                            <button type="button" id="clearSearchBtn" class="search-clear-btn" title="Bersihkan pencarian">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
                         </div>
 
                         <select id="rackFilterSelect" class="form-select filter-select-gys" style="max-width: 220px;"
@@ -204,7 +219,7 @@
                         </select>
                     </div>
 
-                    {{-- Kanan: Filter Status Pills & Total Counter --}}
+                    {{-- Bagian Kanan: Tombol Filter Status Stok (Semua / Tersedia / Menipis / Habis) & Jumlah Baris --}}
                     <div class="d-flex flex-wrap align-items-center justify-content-between justify-content-xl-end gap-2.5">
                         <div class="filter-pills-group" role="group" aria-label="Filter Status Stok">
                             <button type="button" class="filter-pill-btn active" data-filter="all">
@@ -225,6 +240,7 @@
                             </button>
                         </div>
 
+                        {{-- Indikator Jumlah Item yang Sedang Ditampilkan --}}
                         <div class="d-flex align-items-center gap-1.5 small text-secondary ps-xl-2 border-start-xl">
                             <span class="fw-medium d-none d-sm-inline">Menampilkan:</span>
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold px-2.5 py-1 rounded-pill"
@@ -236,7 +252,7 @@
                 </div>
             </div>
 
-            {{-- Tabel Inventaris --}}
+            {{-- 6B. Tabel Daftar Inventaris Suku Cadang --}}
             <div class="table-responsive">
                 <table class="table-gys align-middle mb-0" id="inventoryTable">
                     <thead>
@@ -253,8 +269,10 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {{-- Looping Data Barang dari Database --}}
                         @forelse ($barangs as $index => $barang)
                             @php
+                                // Menentukan warna badge & kode status stok berdasarkan jumlah unit
                                 if ($barang->stock > 10) {
                                     $stockStatus = 'safe';
                                     $stockLabel  = 'Tersedia';
@@ -268,19 +286,21 @@
                                     $stockLabel  = 'Habis';
                                     $badgeClass  = 'badge-stock-danger';
                                 }
+                                // Format kode part otomatis (contoh: #BRG-0001)
                                 $partCode = '#BRG-' . str_pad($barang->id_barang, 4, '0', STR_PAD_LEFT);
                                 $rackName = $barang->rack?->nama_rack ?? 'Belum Diatur';
                             @endphp
 
+                            {{-- Baris Tabel Barang (data-status & data-rack digunakan untuk filter cepat) --}}
                             <tr class="inventory-row"
                                 data-status="{{ $stockStatus }}"
                                 data-rack="{{ strtolower($rackName) }}">
-                                {{-- Nomor Urut --}}
+                                {{-- Kolom 1: Nomor Urut Baris --}}
                                 <td class="ps-3 text-center text-muted fw-bold row-number" style="font-size: 12px;">
                                     {{ $index + 1 }}
                                 </td>
 
-                                {{-- Nama, Kode Part & Deskripsi Barang --}}
+                                {{-- Kolom 2: Ikon, Nama Barang, Kode Part (#BRG) & Spesifikasi/Deskripsi --}}
                                 <td>
                                     <div class="d-flex align-items-start gap-2.5">
                                         <div class="item-icon-box mt-0.5"
@@ -308,7 +328,7 @@
                                     </div>
                                 </td>
 
-                                {{-- Jumlah Stok + Badge Status --}}
+                                {{-- Kolom 3: Jumlah Stok Fisik + Badge Indikator Status --}}
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="d-flex align-items-baseline gap-1" style="min-width: 58px;">
@@ -319,7 +339,7 @@
                                     </div>
                                 </td>
 
-                                {{-- Posisi Rak --}}
+                                {{-- Kolom 4: Nama / Kode Rak Penyimpanan --}}
                                 <td>
                                     <span class="badge-rack-pill">
                                         <i class="fa-solid fa-inbox text-primary" style="font-size: 11px;"></i>
@@ -327,7 +347,7 @@
                                     </span>
                                 </td>
 
-                                {{-- Area / Lokasi --}}
+                                {{-- Kolom 5: Area / Lokasi Gudang --}}
                                 <td>
                                     <span class="text-secondary small d-inline-flex align-items-center gap-1.5 fw-medium">
                                         <i class="fa-solid fa-location-dot text-danger opacity-75"
@@ -336,10 +356,10 @@
                                     </span>
                                 </td>
 
-                                {{-- Tombol Aksi --}}
+                                {{-- Kolom 6: Tombol Aksi (Ambil, Edit, dan Hapus) --}}
                                 <td class="text-center pe-3">
                                     <div class="d-inline-flex align-items-center gap-1.5">
-                                        {{-- Tombol Ambil (Semua User) --}}
+                                        {{-- Tombol Ambil Barang: Aktif jika stok > 0, Nonaktif jika stok habis --}}
                                         @if ($barang->stock > 0)
                                             <a href="{{ route('pengurangan.create', $barang->id_barang) }}"
                                                 class="btn-action-take" title="Ambil Suku Cadang dari Gudang">
@@ -355,30 +375,29 @@
                                             </button>
                                         @endif
 
-                                        {{-- Tombol Edit & Hapus (Khusus Admin) --}}
+                                        {{-- Tombol Edit & Hapus: Hanya ditampilkan untuk Administrator --}}
                                         @if (auth()->user()->isAdmin())
+                                            {{-- Tombol menuju halaman Edit Barang --}}
                                             <a href="{{ route('barang.edit', $barang->id_barang) }}"
                                                 class="btn-action-edit" title="Edit Data Barang">
                                                 <i class="fa-solid fa-pen-to-square"></i>
                                                 <span>Edit</span>
                                             </a>
-                                            <form action="{{ route('barang.destroy', $barang->id_barang) }}"
-                                                method="POST"
-                                                onsubmit="return confirm('Apakah Anda yakin ingin menghapus barang \'{{ addslashes($barang->nama_barang) }}\'?');"
-                                                class="d-inline m-0">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button class="btn-action-delete border-0" type="submit"
-                                                    title="Hapus Data Barang">
-                                                    <i class="fa-solid fa-trash-can"></i>
-                                                    <span>Hapus</span>
-                                                </button>
-                                            </form>
+
+                                            {{-- Tombol Pemicu Modal Hapus di Tengah Layar (Menggunakan atribut bawaan Bootstrap 5) --}}
+                                            <button type="button" class="btn-action-delete border-0"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalHapusBarang-{{ $barang->id_barang }}"
+                                                title="Hapus Data Barang">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                                <span>Hapus</span>
+                                            </button>
                                         @endif
                                     </div>
                                 </td>
                             </tr>
                         @empty
+                            {{-- Tampilan Kosong: Muncul jika tabel barang di database masih belum ada isi --}}
                             <tr>
                                 <td colspan="6" class="p-0">
                                     <div class="table-empty-box">
@@ -400,7 +419,7 @@
                             </tr>
                         @endforelse
 
-                        {{-- Baris Kosong Saat Filter / Pencarian Tidak Ditemukan --}}
+                        {{-- Baris Kosong Pencarian: Muncul otomatis ketika filter/pencarian tidak menemukan hasil --}}
                         @if ($barangs->isNotEmpty())
                             <tr id="noFilterMatchRow" style="display: none;">
                                 <td colspan="6" class="p-0">
@@ -409,13 +428,9 @@
                                             <i class="fa-solid fa-magnifying-glass"></i>
                                         </div>
                                         <h6 class="fw-bold text-dark mb-1">Suku Cadang Tidak Ditemukan</h6>
-                                        <p class="text-secondary small mb-3">
+                                        <p class="text-secondary small mb-0">
                                             Tidak ada barang yang cocok dengan kata kunci pencarian atau filter yang dipilih.
                                         </p>
-                                        <button type="button" id="resetFilterBtn"
-                                            class="btn btn-outline-secondary btn-sm px-3 py-1.5 fw-semibold">
-                                            <i class="fa-solid fa-rotate-left me-1"></i> Reset Filter &amp; Pencarian
-                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -424,7 +439,7 @@
                 </table>
             </div>
 
-            {{-- Card Footer: Legenda Status Stok --}}
+            {{-- 6C. Footer Tabel: Keterangan Legenda Indikator Status Stok --}}
             <div class="card-footer d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 small text-secondary">
                 <div class="d-flex align-items-center gap-3 flex-wrap">
                     <span class="fw-bold text-dark">Indikator Stok:</span>
@@ -448,95 +463,130 @@
             </div>
         </div>
     </div>
+
+    {{-- =========================================================================
+         7. MODAL KONFIRMASI HAPUS BARANG (POSISI DI TENGAH LAYAR)
+         Menggunakan class "modal-dialog-centered" bawaan Bootstrap 5 sehingga
+         tidak membutuhkan kode JavaScript tambahan untuk membuka/menutup popup.
+         ========================================================================= --}}
+    @if (auth()->user()->isAdmin())
+        @foreach ($barangs as $barang)
+            <div class="modal fade" id="modalHapusBarang-{{ $barang->id_barang }}" tabindex="-1"
+                aria-labelledby="labelHapusBarang-{{ $barang->id_barang }}" aria-hidden="true">
+                {{-- modal-dialog-centered membuat kotak konfirmasi tampil tepat di tengah layar --}}
+                <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+                    <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                        <div class="modal-body p-4 text-center">
+
+                            {{-- Ikon Peringatan Hapus (Merah) --}}
+                            <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
+                                style="width: 60px; height: 60px; background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca;">
+                                <i class="fa-solid fa-trash-can fs-4"></i>
+                            </div>
+
+                            {{-- Judul & Pertanyaan Konfirmasi --}}
+                            <h5 class="fw-bold text-dark mb-1" id="labelHapusBarang-{{ $barang->id_barang }}">
+                                Konfirmasi Hapus Barang
+                            </h5>
+                            <p class="text-secondary small mb-3">
+                                Apakah Anda yakin ingin menghapus barang ini dari katalog inventaris?
+                            </p>
+
+                            {{-- Ringkasan Detail Barang yang Akan Dihapus --}}
+                            <div class="p-3 rounded-3 bg-light border text-start mb-3">
+                                <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                                    <span class="fw-bold text-dark" style="font-size: 13.5px;">{{ $barang->nama_barang }}</span>
+                                    <span class="part-code-badge">#BRG-{{ str_pad($barang->id_barang, 4, '0', STR_PAD_LEFT) }}</span>
+                                </div>
+                                <div class="text-muted small d-flex align-items-center gap-3 flex-wrap">
+                                    <span>
+                                        <i class="fa-solid fa-cubes-stacked me-1 text-primary"></i>
+                                        Stok: <strong class="text-dark">{{ $barang->stock }} Unit</strong>
+                                    </span>
+                                    <span>
+                                        <i class="fa-solid fa-inbox me-1 text-secondary"></i>
+                                        {{ $barang->rack?->nama_rack ?? 'Belum Diatur' }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {{-- Form Control Hapus Barang (Method DELETE) dengan Pilihan "Tidak" atau "Ya, Hapus" --}}
+                            <form action="{{ route('barang.destroy', $barang->id_barang) }}" method="POST"
+                                class="d-flex justify-content-center gap-2 mt-3">
+                                @csrf
+                                @method('DELETE')
+
+                                {{-- Tombol Batal / Tidak (Menutup modal secara otomatis dengan data-bs-dismiss="modal") --}}
+                                <button type="button"
+                                    class="btn btn-outline-secondary px-4 py-2 fw-semibold flex-fill"
+                                    data-bs-dismiss="modal" style="font-size: 13px;">
+                                    <i class="fa-solid fa-xmark me-1"></i> Tidak
+                                </button>
+
+                                {{-- Tombol Konfirmasi Ya, Hapus (Mengirim request DELETE ke BarangController@destroy) --}}
+                                <button type="submit"
+                                    class="btn btn-danger px-4 py-2 fw-bold shadow-sm flex-fill"
+                                    style="font-size: 13px; border-radius: 10px;">
+                                    <i class="fa-solid fa-trash-can me-1"></i> Ya, Hapus
+                                </button>
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    @endif
 @endsection
 
+{{-- =============================================================================
+     8. SCRIPT FILTER & PENCARIAN INSTAN TABEL (RINGKAS & TANPA RELOAD HALAMAN)
+     ============================================================================= --}}
 @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput  = document.getElementById('tableSearchInput');
-            const clearBtn     = document.getElementById('clearSearchBtn');
-            const rackSelect   = document.getElementById('rackFilterSelect');
-            const filterBtns   = document.querySelectorAll('.filter-pill-btn');
-            const tableRows    = document.querySelectorAll('#inventoryTable tbody tr.inventory-row');
-            const noMatchRow   = document.getElementById('noFilterMatchRow');
-            const resetBtn     = document.getElementById('resetFilterBtn');
-            const counterBadge = document.getElementById('activeRowCount');
+        document.addEventListener('DOMContentLoaded', () => {
+            // Mengambil elemen input pencarian, dropdown rak, tombol tab status, dan baris tabel
+            const search = document.getElementById('tableSearchInput');
+            const rack   = document.getElementById('rackFilterSelect');
+            const pills  = document.querySelectorAll('.filter-pill-btn');
+            const rows   = document.querySelectorAll('#inventoryTable tbody tr.inventory-row');
+            const empty  = document.getElementById('noFilterMatchRow');
+            const count  = document.getElementById('activeRowCount');
+            let status   = 'all'; // Menyimpan status filter aktif ('all', 'safe', 'warning', 'danger')
 
-            let activeStatus = 'all';
+            // Fungsi utama untuk menyaring baris tabel berdasarkan kata kunci, status stok, dan rak
+            const filterTable = () => {
+                const q = (search?.value || '').toLowerCase().trim();
+                const r = rack?.value || 'all';
+                let visible = 0;
 
-            function applyTableFilters() {
-                const query    = searchInput ? searchInput.value.toLowerCase().trim() : '';
-                const rackVal  = rackSelect ? rackSelect.value : 'all';
-                let visibleIdx = 0;
+                rows.forEach(row => {
+                    // Cek kecocokan teks pencarian, status stok, dan posisi rak
+                    const show = (!q || row.innerText.toLowerCase().includes(q))
+                        && (status === 'all' || row.dataset.status === status)
+                        && (r === 'all' || row.dataset.rack === r);
 
-                if (clearBtn) {
-                    clearBtn.style.display = query.length > 0 ? 'inline-flex' : 'none';
-                }
-
-                tableRows.forEach(function(row) {
-                    const rowText   = row.innerText.toLowerCase();
-                    const rowStatus = row.getAttribute('data-status');
-                    const rowRack   = row.getAttribute('data-rack');
-
-                    const matchQuery  = !query || rowText.includes(query);
-                    const matchStatus = activeStatus === 'all' || rowStatus === activeStatus;
-                    const matchRack   = rackVal === 'all' || rowRack === rackVal;
-
-                    if (matchQuery && matchStatus && matchRack) {
-                        row.style.display = '';
-                        visibleIdx++;
-                        const numCell = row.querySelector('.row-number');
-                        if (numCell) numCell.textContent = visibleIdx;
-                    } else {
-                        row.style.display = 'none';
-                    }
+                    // Tampilkan atau sembunyikan baris serta perbarui nomor urut otomatis
+                    row.style.display = show ? '' : 'none';
+                    if (show) row.querySelector('.row-number').textContent = ++visible;
                 });
 
-                if (counterBadge) {
-                    counterBadge.textContent = visibleIdx + ' Item';
-                }
+                // Perbarui badge jumlah item yang tampil & tampilkan pesan kosong jika hasil = 0
+                if (count) count.textContent = `${visible} Item`;
+                if (empty) empty.style.display = (rows.length && !visible) ? '' : 'none';
+            };
 
-                if (noMatchRow) {
-                    noMatchRow.style.display = (tableRows.length > 0 && visibleIdx === 0) ? '' : 'none';
-                }
-            }
+            // Jalankan filter saat mengetik di kolom pencarian atau memilih dropdown rak
+            search?.addEventListener('input', filterTable);
+            rack?.addEventListener('change', filterTable);
 
-            if (searchInput) {
-                searchInput.addEventListener('input', applyTableFilters);
-            }
-
-            if (clearBtn && searchInput) {
-                clearBtn.addEventListener('click', function() {
-                    searchInput.value = '';
-                    searchInput.focus();
-                    applyTableFilters();
-                });
-            }
-
-            if (rackSelect) {
-                rackSelect.addEventListener('change', applyTableFilters);
-            }
-
-            filterBtns.forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    filterBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    activeStatus = this.getAttribute('data-filter') || 'all';
-                    applyTableFilters();
-                });
-            });
-
-            if (resetBtn) {
-                resetBtn.addEventListener('click', function() {
-                    if (searchInput) searchInput.value = '';
-                    if (rackSelect) rackSelect.value = 'all';
-                    activeStatus = 'all';
-                    filterBtns.forEach(b => {
-                        b.classList.toggle('active', b.getAttribute('data-filter') === 'all');
-                    });
-                    applyTableFilters();
-                });
-            }
+            // Jalankan filter saat salah satu tombol tab status stok diklik
+            pills.forEach(btn => btn.addEventListener('click', () => {
+                pills.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                status = btn.dataset.filter;
+                filterTable();
+            }));
         });
     </script>
 @endpush

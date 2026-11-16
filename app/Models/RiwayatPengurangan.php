@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 class RiwayatPengurangan extends Model
 {
     protected $table = 'riwayat_pengurangan';
+
     protected $primaryKey = 'id_pengurangan';
 
     protected $fillable = [

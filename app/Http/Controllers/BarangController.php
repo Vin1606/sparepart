@@ -39,10 +39,10 @@ class BarangController extends Controller
     {
         $validated = $request->validate([
             'nama_barang' => 'required|string|max:255',
-            'deskripsi'   => 'nullable|string',
-            'id_rack'     => 'required|exists:rack,id_rack',
-            'kategori'     => 'required|in:PCS,KG,LT,MTR,UNT',
-            'stock'       => 'required|integer|min:0',
+            'deskripsi' => 'nullable|string',
+            'id_rack' => 'required|exists:rack,id_rack',
+            'kategori' => 'required|in:PCS,KG,LT,MTR,UNT',
+            'stock' => 'required|integer|min:0',
         ]);
 
         Barang::create($validated);
@@ -57,7 +57,7 @@ class BarangController extends Controller
     public function edit(string $id_barang)
     {
         $barang = Barang::findOrFail($id_barang);
-        $racks  = Rack::all();
+        $racks = Rack::all();
 
         return view('barang.edit', compact('barang', 'racks'));
     }
@@ -69,10 +69,10 @@ class BarangController extends Controller
     {
         $validated = $request->validate([
             'nama_barang' => 'required|string|max:255',
-            'deskripsi'   => 'nullable|string',
-            'id_rack'     => 'required|exists:rack,id_rack',
-            'kategori'     => 'required|in:PCS,KG,LT,MTR,UNT',
-            'stock'       => 'required|integer|min:0',
+            'deskripsi' => 'nullable|string',
+            'id_rack' => 'required|exists:rack,id_rack',
+            'kategori' => 'required|in:PCS,KG,LT,MTR,UNT',
+            'stock' => 'required|integer|min:0',
         ]);
 
         $barang = Barang::findOrFail($id_barang);
@@ -89,7 +89,7 @@ class BarangController extends Controller
     {
         $barang = Barang::find($id_barang);
 
-        if (!$barang) {
+        if (! $barang) {
             return redirect()->route('barang.index')
                 ->with('error', 'Barang tidak ditemukan.');
         }

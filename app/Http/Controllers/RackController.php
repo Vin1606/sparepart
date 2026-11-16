@@ -38,11 +38,11 @@ class RackController extends Controller
     {
         $validatedData = $request->validate([
             'nama_rack' => 'required|string|max:255|unique:rack,nama_rack',
-            'lokasi'    => 'required|string|max:255',
+            'lokasi' => 'required|string|max:255',
         ], [
             'nama_rack.required' => 'Nama rak wajib diisi.',
-            'nama_rack.unique'   => 'Nama rak ini sudah terdaftar sebelumnya.',
-            'lokasi.required'    => 'Lokasi / zona gudang wajib diisi.',
+            'nama_rack.unique' => 'Nama rak ini sudah terdaftar sebelumnya.',
+            'lokasi.required' => 'Lokasi / zona gudang wajib diisi.',
         ]);
 
         Rack::create($validatedData);
@@ -69,12 +69,12 @@ class RackController extends Controller
         $rack = Rack::findOrFail($id_rack);
 
         $validatedData = $request->validate([
-            'nama_rack' => 'required|string|max:255|unique:rack,nama_rack,' . $id_rack . ',id_rack',
-            'lokasi'    => 'required|string|max:255',
+            'nama_rack' => 'required|string|max:255|unique:rack,nama_rack,'.$id_rack.',id_rack',
+            'lokasi' => 'required|string|max:255',
         ], [
             'nama_rack.required' => 'Nama rak wajib diisi.',
-            'nama_rack.unique'   => 'Nama rak ini sudah digunakan oleh rak lain.',
-            'lokasi.required'    => 'Lokasi / zona gudang wajib diisi.',
+            'nama_rack.unique' => 'Nama rak ini sudah digunakan oleh rak lain.',
+            'lokasi.required' => 'Lokasi / zona gudang wajib diisi.',
         ]);
 
         $rack->update($validatedData);

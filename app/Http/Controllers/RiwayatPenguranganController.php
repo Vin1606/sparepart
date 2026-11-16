@@ -23,7 +23,7 @@ class RiwayatPenguranganController extends Controller
         $user = auth()->user();
         $query = RiwayatPengurangan::with(['barang.rack', 'user']);
 
-        if (!$user->isAdmin()) {
+        if (! $user->isAdmin()) {
             $query->where('user_id', $user->id);
         }
 
@@ -57,19 +57,19 @@ class RiwayatPenguranganController extends Controller
         $barang = Barang::findOrFail($id_barang);
 
         $validatedData = $request->validate([
-            'jumlah'        => ['required', 'integer', 'min:1'],
-            'nama_mekanik'  => ['required', 'string', 'max:255'],
-            'shift'         => ['required', 'string', 'in:Shift 1,Shift 2,Shift 3,Non-Shift,Regu 1,Regu 2,Regu 3,Shift 1 (Pagi),Shift 2 (Sore),Shift 3 (Malam),Non-Shift / Day'],
-            'keperluan'     => ['required', 'string', 'max:500'],
+            'jumlah' => ['required', 'integer', 'min:1'],
+            'nama_mekanik' => ['required', 'string', 'max:255'],
+            'shift' => ['required', 'string', 'in:Shift 1,Shift 2,Shift 3,Non-Shift,Regu 1,Regu 2,Regu 3,Shift 1 (Pagi),Shift 2 (Sore),Shift 3 (Malam),Non-Shift / Day'],
+            'keperluan' => ['required', 'string', 'max:500'],
             'tanggal_ambil' => ['nullable', 'date'],
         ], [
-            'jumlah.required'       => 'Jumlah barang yang diambil wajib diisi.',
-            'jumlah.integer'        => 'Jumlah harus berupa bilangan bulat positif.',
-            'jumlah.min'            => 'Jumlah pengambilan minimal 1 unit.',
+            'jumlah.required' => 'Jumlah barang yang diambil wajib diisi.',
+            'jumlah.integer' => 'Jumlah harus berupa bilangan bulat positif.',
+            'jumlah.min' => 'Jumlah pengambilan minimal 1 unit.',
             'nama_mekanik.required' => 'Nama teknisi / mekanik pengambil wajib diisi.',
-            'shift.required'        => 'Shift kerja wajib dipilih.',
-            'shift.in'              => 'Pilihan shift kerja tidak valid.',
-            'keperluan.required'    => 'Note / keterangan keperluan wajib diisi.',
+            'shift.required' => 'Shift kerja wajib dipilih.',
+            'shift.in' => 'Pilihan shift kerja tidak valid.',
+            'keperluan.required' => 'Note / keterangan keperluan wajib diisi.',
         ]);
 
         // Validasi stok fisik mencukupi
@@ -84,12 +84,12 @@ class RiwayatPenguranganController extends Controller
             $barang->decrement('stock', $validatedData['jumlah']);
 
             RiwayatPengurangan::create([
-                'id_barang'     => $barang->id_barang,
-                'user_id'       => auth()->id(),
-                'nama_mekanik'  => $validatedData['nama_mekanik'],
-                'shift'         => $validatedData['shift'],
-                'jumlah'        => $validatedData['jumlah'],
-                'keperluan'     => $validatedData['keperluan'],
+                'id_barang' => $barang->id_barang,
+                'user_id' => auth()->id(),
+                'nama_mekanik' => $validatedData['nama_mekanik'],
+                'shift' => $validatedData['shift'],
+                'jumlah' => $validatedData['jumlah'],
+                'keperluan' => $validatedData['keperluan'],
                 'tanggal_ambil' => $request->filled('tanggal_ambil') ? $request->tanggal_ambil : now(),
             ]);
         });

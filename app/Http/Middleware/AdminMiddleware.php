@@ -19,7 +19,7 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!auth()->check() || !auth()->user()->isAdmin()) {
+        if (! auth()->check() || ! auth()->user()->isAdmin()) {
             return redirect()->route('barang.index')
                 ->with('error', 'Akses ditolak! Fitur ini hanya dapat diakses oleh Administrator.');
         }
